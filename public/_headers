@@ -1,0 +1,7 @@
+# Cache videos for 1 year
+/videos/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache logo for 1 year
+/logo/*
+  Cache-Control: public, max-age=31536000, immutable
