@@ -17,7 +17,7 @@ const heroVideos = [
   },
   {
     id: videos[7].id,
-    videoUrl: "https://res.cloudinary.com/dgavshhxy/video/upload/v1778343796/reportage_interw_4_kabbar_indh_tv_haj_aissa_k0mzzi.mp4",
+    videoUrl: "https://nq3v18uj8o.ufs.sh/f/ZvpqXEDI3YkpkDCCQF2gej36S4focRZ0FbEBhDGa1mYuts2r",
     title: videos[7].title,
   },
 ];

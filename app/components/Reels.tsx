@@ -32,17 +32,17 @@ const reels = [
   {
     id: "reel-6",
     title: "INDH — Coopératives",
-    videoUrl: "https://res.cloudinary.com/dgavshhxy/video/upload/v1778343511/reportage_6_indh_tv_categirie_argan_zi4k2x.mp4",
+    videoUrl: "https://nq3v18uj8o.ufs.sh/f/ZvpqXEDI3YkpxD1wFW5EZpSwqiz1kYVsALudTbxQ70KmIMUJ",
   },
   {
     id: "reel-7",
     title: "INDH — Agriculture",
-    videoUrl: "https://res.cloudinary.com/dgavshhxy/video/upload/v1778344130/video_categorie_legume_indh_tv_erzhoq.mp4",
+    videoUrl: "https://nq3v18uj8o.ufs.sh/f/ZvpqXEDI3YkpnhLsEKopqcN1OKD5JohWM0mbxAQU7CTdSPa3",
   },
   {
     id: "reel-8",
     title: "INDH — Élevage",
-    videoUrl: "https://res.cloudinary.com/dgavshhxy/video/upload/v1778344042/video_categorie_elvage_indh_tv_yyylkt.mp4",
+    videoUrl: "https://nq3v18uj8o.ufs.sh/f/ZvpqXEDI3YkpkDCCQF2gej36S4focRZ0FbEBhDGa1mYuts2r",
   },
 ];
 

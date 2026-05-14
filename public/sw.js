@@ -2,8 +2,8 @@ const CACHE_NAME = "indh-tv-videos-v1";
 
 // Video domains to cache
 const VIDEO_DOMAINS = [
-  "res.cloudinary.com",
   "smbiz2u60k.ufs.sh",
+  "nq3v18uj8o.ufs.sh",
 ];
 
 // Install: activate immediately
