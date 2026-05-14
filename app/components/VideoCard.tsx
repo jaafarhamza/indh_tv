@@ -12,6 +12,16 @@ export default function VideoCard({ video }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Generate a unique time offset per video so each shows a different frame
+  const getTimeOffset = () => {
+    const num = parseInt(video.id) || 1;
+    const offsets = [2, 5, 8, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 10, 18, 22];
+    return offsets[(num - 1) % offsets.length];
+  };
+
+  const timeOffset = getTimeOffset();
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -62,22 +72,28 @@ export default function VideoCard({ video }: VideoCardProps) {
             />
           )}
 
-          {/* Video only loads on hover */}
+          {/* Video loads metadata to show a frame as thumbnail */}
           <video
             ref={videoRef}
             muted
             loop
             playsInline
-            preload="none"
+            preload="metadata"
+            onLoadedData={() => {
+              setIsLoaded(true);
+              if (videoRef.current && !isHovered) {
+                videoRef.current.currentTime = timeOffset;
+              }
+            }}
             className={`w-full h-full object-cover transition-opacity duration-300 ${
               isHovered || !hasThumbnail ? "opacity-100" : "opacity-0"
             }`}
           >
-            <source src={video.videoUrl} type="video/mp4" />
+            <source src={`${video.videoUrl}#t=${timeOffset}`} type="video/mp4" />
           </video>
 
-          {/* Shimmer when no thumbnail */}
-          {!hasThumbnail && !isHovered && (
+          {/* Shimmer when not loaded yet */}
+          {!hasThumbnail && !isLoaded && !isHovered && (
             <div className="absolute inset-0 shimmer rounded" />
           )}
 
