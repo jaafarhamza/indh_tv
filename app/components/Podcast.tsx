@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 
-const PODCAST_URL = "https://smbiz2u60k.ufs.sh/f/jhCrop5VF1MdVcKlJacfcpPwNLD0qmFfWYxzTyR48CaOJnGA";
+const PODCAST_URL = "https://smbiz2u60k.ufs.sh/f/jhCrop5VF1MdL80xg5utTkXJKpm940oiHUBLYfrQbg1RwvN6";
 
 export default function Podcast() {
   const [isPlaying, setIsPlaying] = useState(false);
