@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Video } from "../data/videos";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 interface VideoCardProps {
   video: Video;
@@ -11,22 +11,44 @@ interface VideoCardProps {
 export default function VideoCard({ video }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Generate a unique time offset per video so each shows a different frame
+  // Small time offsets (1-5s) so they work even with short videos
   const getTimeOffset = () => {
     const num = parseInt(video.id) || 1;
-    const offsets = [2, 5, 8, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 10, 18, 22];
-    return offsets[(num - 1) % offsets.length];
+    return ((num * 7) % 5) + 1; // gives 1, 2, 3, 4, or 5
   };
 
   const timeOffset = getTimeOffset();
 
+  // Lazy load: only start loading when card is visible in viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Seek to frame once video has enough data
+  useEffect(() => {
+    if (isLoaded && videoRef.current && !isHovered) {
+      videoRef.current.currentTime = timeOffset;
+    }
+  }, [isLoaded]);
+
   const handleMouseEnter = () => {
     setIsHovered(true);
-    // Only load and play video on hover (saves bandwidth)
     if (videoRef.current) {
+      videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {});
     }
   };
@@ -35,11 +57,10 @@ export default function VideoCard({ video }: VideoCardProps) {
     setIsHovered(false);
     if (videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      videoRef.current.currentTime = timeOffset;
     }
   };
 
-  // Determine category badge class
   const getCategoryBadge = () => {
     switch (video.category) {
       case "Reportages": return "badge-red";
@@ -48,56 +69,37 @@ export default function VideoCard({ video }: VideoCardProps) {
     }
   };
 
-  const hasThumbnail = video.thumbnail && !imageError;
-
   return (
     <Link href={`/watch/${video.id}`}>
       <div
+        ref={cardRef}
         className="video-card relative rounded-xl overflow-hidden cursor-pointer group bg-[#141414] border border-white/[0.06] min-w-[220px] max-w-[240px] md:min-w-[240px] md:max-w-[260px]"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Thumbnail / Video Preview */}
         <div className="relative aspect-video bg-[#141414]">
-          {/* Static image thumbnail (super fast, tiny file) */}
-          {hasThumbnail && (
-            <img
-              src={video.thumbnail}
-              alt={video.title}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-                isHovered ? "opacity-0" : "opacity-100"
-              }`}
-              loading="lazy"
-              onError={() => setImageError(true)}
-            />
+          {/* Video - only loads when visible in viewport */}
+          {isVisible && (
+            <video
+              ref={videoRef}
+              muted
+              loop
+              playsInline
+              preload="auto"
+              onLoadedData={() => setIsLoaded(true)}
+              onSeeked={() => setIsLoaded(true)}
+              className="w-full h-full object-cover"
+            >
+              <source src={`${video.videoUrl}#t=${timeOffset}`} type="video/mp4" />
+            </video>
           )}
 
-          {/* Video loads metadata to show a frame as thumbnail */}
-          <video
-            ref={videoRef}
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            onLoadedData={() => {
-              setIsLoaded(true);
-              if (videoRef.current && !isHovered) {
-                videoRef.current.currentTime = timeOffset;
-              }
-            }}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${
-              isHovered || !hasThumbnail ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <source src={`${video.videoUrl}#t=${timeOffset}`} type="video/mp4" />
-          </video>
-
-          {/* Shimmer when not loaded yet */}
-          {!hasThumbnail && !isLoaded && !isHovered && (
+          {/* Shimmer while loading */}
+          {!isLoaded && (
             <div className="absolute inset-0 shimmer rounded" />
           )}
 
-          {/* Play icon overlay */}
+          {/* Play icon overlay on hover */}
           <div
             className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
               isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90"

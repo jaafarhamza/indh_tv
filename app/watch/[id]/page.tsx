@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { getVideoById, getRelatedVideos } from "../../data/videos";
 import VideoCard from "../../components/VideoCard";
 import Footer from "../../components/Footer";
@@ -13,37 +13,6 @@ export default function WatchPage() {
   const video = getVideoById(id);
   const relatedVideos = getRelatedVideos(id);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Try HLS adaptive streaming if available
-  useEffect(() => {
-    if (!video || !video.streamUrl || !videoRef.current) return;
-
-    const videoEl = videoRef.current;
-
-    // Check if browser supports HLS natively (Safari)
-    if (videoEl.canPlayType("application/vnd.apple.mpegurl")) {
-      videoEl.src = video.streamUrl;
-    } else {
-      // For Chrome/Firefox, try loading hls.js dynamically
-      import("hls.js").then(({ default: Hls }) => {
-        if (Hls.isSupported()) {
-          const hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true,
-            startLevel: -1, // Auto quality selection
-          });
-          hls.loadSource(video.streamUrl!);
-          hls.attachMedia(videoEl);
-        } else {
-          // Fallback to regular MP4
-          videoEl.src = video.videoUrl;
-        }
-      }).catch(() => {
-        // hls.js not installed, fallback to MP4
-        videoEl.src = video.videoUrl;
-      });
-    }
-  }, [video]);
 
   if (!video) {
     return (
