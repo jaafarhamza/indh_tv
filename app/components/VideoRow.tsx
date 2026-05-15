@@ -67,7 +67,7 @@ export default function VideoRow({ title, videos, id }: VideoRowProps) {
           className="flex gap-4 overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-12 pb-4"
         >
           {videos.map((video) => (
-            <VideoCard key={video.id} video={video} />
+            <VideoCard key={video.id} video={video} index={index} />
           ))}
         </div>
 

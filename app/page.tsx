@@ -68,7 +68,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {allVideos.map((video) => (
                 <div key={video.id} className="fade-in-scale">
-                  <VideoCard video={video} />
+                  <VideoCard video={video} index={index} />
                 </div>
               ))}
             </div>

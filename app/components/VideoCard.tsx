@@ -6,24 +6,21 @@ import { useRef, useState, useEffect } from "react";
 
 interface VideoCardProps {
   video: Video;
+  index?: number; // position in the list for staggered loading
 }
 
-export default function VideoCard({ video }: VideoCardProps) {
+export default function VideoCard({ video, index = 0 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [thumbnailReady, setThumbnailReady] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Small time offsets (1-5s) so they work even with short videos
-  const getTimeOffset = () => {
-    const num = parseInt(video.id) || 1;
-    return ((num * 7) % 5) + 1; // gives 1, 2, 3, 4, or 5
-  };
+  // Small time offset per video (1-4 seconds - safe range)
+  const timeOffset = ((parseInt(video.id) || 1) % 4) + 1;
 
-  const timeOffset = getTimeOffset();
-
-  // Lazy load: only start loading when card is visible in viewport
+  // Lazy load: only start when visible
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -32,22 +29,55 @@ export default function VideoCard({ video }: VideoCardProps) {
           observer.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: "200px" }
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Seek to frame once video has enough data
+  // Staggered load: capture a frame into canvas then remove video src
   useEffect(() => {
-    if (isLoaded && videoRef.current && !isHovered) {
+    if (!isVisible) return;
+
+    // Stagger by 300ms per card to avoid saturating connections
+    const delay = index * 300;
+    const timer = setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.src = `${video.videoUrl}#t=${timeOffset}`;
+        videoRef.current.load();
+      }
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [isVisible]);
+
+  // When video loads enough data, capture frame to canvas and free the connection
+  const handleSeeked = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        canvas.width = videoRef.current.videoWidth || 480;
+        canvas.height = videoRef.current.videoHeight || 270;
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        setThumbnailReady(true);
+        // Free the video connection
+        videoRef.current.removeAttribute("src");
+        videoRef.current.load();
+      }
+    }
+  };
+
+  const handleLoadedData = () => {
+    if (videoRef.current) {
       videoRef.current.currentTime = timeOffset;
     }
-  }, [isLoaded]);
+  };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (videoRef.current) {
+      videoRef.current.src = video.videoUrl;
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {});
     }
@@ -57,7 +87,8 @@ export default function VideoCard({ video }: VideoCardProps) {
     setIsHovered(false);
     if (videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.currentTime = timeOffset;
+      videoRef.current.removeAttribute("src");
+      videoRef.current.load();
     }
   };
 
@@ -78,24 +109,30 @@ export default function VideoCard({ video }: VideoCardProps) {
         onMouseLeave={handleMouseLeave}
       >
         <div className="relative aspect-video bg-[#141414]">
-          {/* Video - only loads when visible in viewport */}
-          {isVisible && (
-            <video
-              ref={videoRef}
-              muted
-              loop
-              playsInline
-              preload="auto"
-              onLoadedData={() => setIsLoaded(true)}
-              onSeeked={() => setIsLoaded(true)}
-              className="w-full h-full object-cover"
-            >
-              <source src={`${video.videoUrl}#t=${timeOffset}`} type="video/mp4" />
-            </video>
-          )}
+          {/* Canvas thumbnail (captured frame - instant, no network) */}
+          <canvas
+            ref={canvasRef}
+            className={`absolute inset-0 w-full h-full object-cover ${
+              thumbnailReady && !isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          />
+
+          {/* Hidden video for frame capture + hover playback */}
+          <video
+            ref={videoRef}
+            muted
+            loop
+            playsInline
+            preload="none"
+            onLoadedData={handleLoadedData}
+            onSeeked={handleSeeked}
+            className={`w-full h-full object-cover ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          />
 
           {/* Shimmer while loading */}
-          {!isLoaded && (
+          {!thumbnailReady && !isHovered && (
             <div className="absolute inset-0 shimmer rounded" />
           )}
 
